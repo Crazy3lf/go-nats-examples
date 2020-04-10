@@ -5,7 +5,7 @@
 [Go](http://www.golang.org) examples and CLI clients for the [NATS messaging system](https://nats.io).
 
 [![License Apache 2](https://img.shields.io/badge/License-Apache2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Build Status](https://travis-ci.org/nats-io/go-nats-examples.svg?branch=master)](http://travis-ci.org/nats-io/go-nats-examples)
+[![Build Status](https://travis-ci.org/Crazy3lf/go-nats-examples.svg?branch=master)](http://travis-ci.org/Crazy3lf/go-nats-examples)
 
 # Overview
 This repo contains go-gettable [nats.go](www.github.com/nats-io/nats.go) examples and client code as well as api examples from the documentation.
@@ -14,12 +14,12 @@ Install your own server, or optionally utilize the [demo server](http://demo.nat
 
   1. Get and run nats-sub:
      ```
-     go get github.com/nats-io/go-nats-examples/tools/nats-sub
+     go get github.com/Crazy3lf/go-nats-examples/tools/nats-sub
      nats-sub -s demo.nats.io subject_name
      ```
   1. Get and run nats-pub:
      ```
-     go get github.com/nats-io/go-nats-examples/tools/nats-pub
+     go get github.com/Crazy3lf/go-nats-examples/tools/nats-pub
      nats-pub -s demo.nats.io subject_name msg
      ```
   1. Verify publisher output:
