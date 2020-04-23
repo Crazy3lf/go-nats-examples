@@ -43,8 +43,10 @@ Subscription Options:
 	         (for more information: https://golang.org/pkg/time/#ParseDuration)
 	--durable <name>                Durable subscriber name
 	--unsubscribe                   Unsubscribe the durable on exit
-	--quite                         Only show message data
+	-q, --quite                     Only show message data
 	--single                        Only request for 1 message
+	--timeout                       Duration to timeout if no new message is received (e.g. 1s, 5m) (default: 0s, no timeout)
+	         (for more information: https://golang.org/pkg/time/#ParseDuration)
 `
 
 // NOTE: Use tls scheme for TLS, e.g. stan-sub -s tls://demo.nats.io:4443 foo
@@ -68,8 +70,10 @@ func main() {
 	var qgroup string
 	var unsubscribe bool
 	var quite bool
+	var timeout time.Duration
 	var single bool
 	var URL string
+	var timeoutTicker time.Ticker
 
 	//	defaultID := fmt.Sprintf("client.%s", nuid.Next())
 
@@ -80,6 +84,7 @@ func main() {
 	flag.StringVar(&clientID, "id", "", "The NATS Streaming client ID to connect with")
 	flag.StringVar(&clientID, "clientid", "", "The NATS Streaming client ID to connect with")
 	flag.BoolVar(&showTime, "t", false, "Display timestamps")
+
 	// Subscription options
 	flag.Uint64Var(&startSeq, "seq", 0, "Start at sequence no.")
 	flag.BoolVar(&deliverAll, "all", false, "Deliver all")
@@ -91,6 +96,7 @@ func main() {
 	flag.BoolVar(&quite, "quite", false, "Only show message data")
 	flag.BoolVar(&quite, "q", false, "Only show message data")
 	flag.BoolVar(&single, "single", false, "Only request for 1 message then close connection")
+	flag.DurationVar(&timeout, "timeout", 0, "Duration to timeout if no new message is received")
 
 	log.SetFlags(0)
 	flag.Usage = usage
@@ -133,11 +139,14 @@ func main() {
 
 	var mcb = func(msg *stan.Msg) {
 		printfunc(msg)
+		if timeout > 0 { //reset the timer after each message
+			timeoutTicker = *time.NewTicker(timeout)
+		}
 	}
 	if single {
 		mcb = func(msg *stan.Msg) {
 			printfunc(msg)
-			signalChan <- syscall.SIGINT
+			signalChan <- syscall.SIGHUP
 		}
 	}
 
@@ -165,6 +174,22 @@ func main() {
 	if err != nil {
 		sc.Close()
 		log.Fatal(err)
+	}
+
+	if timeout > 0 {
+		timeoutTicker = *time.NewTicker(timeout)
+		go func() {
+			for {
+				select {
+				case t := <-timeoutTicker.C:
+					if !quite {
+						log.Printf("Timeout at %s: no data for %s\n", t, timeout)
+					}
+					signalChan <- syscall.SIGHUP
+					return
+				}
+			}
+		}()
 	}
 
 	if !quite {
